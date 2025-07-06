@@ -3,305 +3,126 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Synt+</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto+Mono&display=swap" rel="stylesheet" />
+<title>synt+</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet" />
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0;
-    height: 100%;
-    background: #121212;
-    color: #eee;
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
-  }
-  #welcome-screen {
-    position: fixed;
-    inset: 0;
-    background: #121212;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 1s ease, visibility 1s ease;
-    user-select: none;
-  }
-  #welcome-screen.hide {
-    opacity: 0;
-    visibility: hidden;
-  }
-  #welcome-logo {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 24px;
-    animation: spin 3s linear infinite;
-    stroke: #2979ff;
-    stroke-width: 3;
-    fill: #00bcd4;
-  }
-  @keyframes spin {
-    from { transform: rotate(0deg);}
-    to { transform: rotate(360deg);}
-  }
-  #welcome-text {
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: #00bcd4;
-    letter-spacing: 0.15em;
-  }
-  #loading-msg {
-    margin-top: 12px;
-    color: #aaa;
-    font-weight: 500;
-    font-size: 1rem;
-    max-width: 320px;
-    text-align: center;
-    user-select: text;
-  }
-  #app {
-    display: none;
-    height: 100vh;
-    width: 100vw;
-    background: #1e1e1e;
-    color: #eee;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas:
-      "header header"
-      "editor console"
-      "footer footer";
-  }
-  header {
-    grid-area: header;
-    background: #121212;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 16px;
-    height: 56px;
-    border-bottom: 1px solid #222;
-  }
-  #header-logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #00bcd4;
-    font-weight: 700;
-    font-size: 1.3rem;
-    user-select: none;
-  }
-  #header-logo svg {
-    width: 28px;
-    height: 28px;
-    animation: spin 4s linear infinite;
-    stroke: #2979ff;
-    stroke-width: 2;
-    fill: none;
-  }
-  #header-buttons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  button, select {
-    background: #121212;
-    border: 1.5px solid #00bcd4;
-    color: #00bcd4;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-family: 'Inter', sans-serif;
-    transition: background-color 0.25s ease, color 0.25s ease;
-  }
-  button:hover, select:hover {
-    background: #00bcd4;
-    color: #121212;
-  }
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  #editor {
-    grid-area: editor;
-    height: calc(100vh - 56px - 80px);
-  }
-  #console {
-    grid-area: console;
+  /* Reset and base */
+  body, html {
+    margin: 0; padding: 0; height: 100vh;
     background: #121212;
     color: #eee;
     font-family: 'Roboto Mono', monospace;
-    padding: 14px;
-    overflow-y: auto;
-    border-left: 1px solid #222;
-    white-space: pre-wrap;
-    user-select: text;
-    height: calc(100vh - 56px - 80px);
-    font-size: 14px;
+    display: flex; flex-direction: column;
   }
-  footer {
-    grid-area: footer;
-    height: 80px;
-    background: #121212;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    border-top: 1px solid #222;
-    color: #00bcd4;
-    font-size: 0.9rem;
-  }
-  #settings-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
+  header {
     background: #1e1e1e;
-    border-radius: 10px;
-    box-shadow: 0 0 30px rgba(0, 188, 212, 0.5);
-    width: 320px;
-    padding: 20px;
-    z-index: 10000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    color: #00bcd4;
-    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 2px solid #00bcd4;
   }
-  #settings-modal.show {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  #settings-modal h2 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-weight: 700;
-  }
-  #settings-modal label {
-    display: block;
-    margin-top: 12px;
-    margin-bottom: 6px;
-  }
-  #settings-modal select {
-    width: 100%;
-  }
-  #close-settings {
-    position: absolute;
-    top: 10px;
-    right: 14px;
-    background: transparent;
-    border: none;
+  .logo {
+    font-weight: bold;
     font-size: 1.4rem;
     color: #00bcd4;
+  }
+  nav button {
+    margin-left: 10px;
+    background: #2979ff;
+    border: none;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
     cursor: pointer;
-    user-select: none;
+    transition: background-color 0.2s ease-in-out;
+  }
+  nav button:hover {
+    background: #00bcd4;
+  }
+  #language-select {
+    margin-left: 20px;
+    background: #222;
+    color: #eee;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+  #editor, #console {
+    flex: 1;
+    height: 100%;
+    border: none;
+    outline: none;
+  }
+  #editor {
+    background: #1e1e1e;
+  }
+  #console {
+    background: #121212;
+    color: #00e676;
+    padding: 10px;
+    font-size: 0.9rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  footer {
+    background: #1e1e1e;
+    padding: 8px 20px;
+    text-align: center;
+    color: #666;
+    font-size: 0.85rem;
   }
 </style>
 </head>
 <body>
 
-<!-- Welcome Screen -->
-<div id="welcome-screen" role="alert" aria-live="polite" aria-atomic="true">
-  <svg id="welcome-logo" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-    <circle cx="50" cy="50" r="48" stroke="#2979ff" stroke-opacity="0.3" stroke-width="6" fill="none" />
-    <path d="M30 25 L60 25 L30 75 L60 75" stroke="#2979ff" stroke-width="6" fill="none"/>
-    <path d="M65 30 L85 50 L65 70" stroke="#2979ff" stroke-width="6" fill="none" />
-  </svg>
-  <div id="welcome-text">Welcome to Synt+</div>
-  <div id="loading-msg">Loading Python runtime...</div>
-</div>
+<header>
+  <div class="logo">synt+</div>
+  <nav>
+    <button id="new-file-btn">New File</button>
+    <button id="open-file-btn">Open File</button>
+    <button id="save-file-btn">Save File</button>
+    <select id="language-select" title="Select Language">
+      <option value="javascript" selected>JavaScript</option>
+      <option value="python" disabled>Python (disabled)</option>
+      <option value="cpp" disabled>C++ (disabled)</option>
+      <option value="csharp" disabled>C# (disabled)</option>
+    </select>
+  </nav>
+</header>
 
-<!-- Main App -->
-<div id="app" role="main" aria-label="Synt Plus code editor app" tabindex="-1">
+<main>
+  <div id="editor" tabindex="0"></div>
+  <div id="console" aria-live="polite" aria-atomic="true"></div>
+</main>
 
-  <header>
-    <div id="header-logo" aria-label="Synt Plus logo">
-      <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-        <circle cx="50" cy="50" r="48" stroke="#2979ff" stroke-width="6" fill="none" />
-        <path d="M30 25 L60 25 L30 75 L60 75" stroke="#2979ff" stroke-width="8" fill="none" />
-        <path d="M65 30 L85 50 L65 70" stroke="#2979ff" stroke-width="8" fill="none" />
-      </svg>
-      Synt+
-    </div>
+<footer>synt+ — simple web-based code editor | Running JavaScript only</footer>
 
-    <div id="header-buttons">
-      <select id="language-select" aria-label="Select programming language">
-        <option value="python" selected>Python</option>
-        <option value="javascript">JavaScript</option>
-        <option value="cpp">C++</option>
-        <option value="csharp">C#</option>
-      </select>
-      <button id="new-file" aria-label="Create new file">New File</button>
-      <button id="open-file" aria-label="Open file">Open File</button>
-      <button id="save-file" aria-label="Save file">Save File</button>
-      <button id="run-code" aria-label="Run code" disabled>Run</button>
-      <button id="open-settings" aria-label="Open settings">Settings</button>
-      <input type="file" id="file-input" accept=".synt" style="display:none" />
-    </div>
-  </header>
+<input type="file" id="file-input" accept=".synt" style="display:none" />
 
-  <div id="editor" role="textbox" aria-label="Code editor"></div>
-
-  <pre id="console" aria-live="polite" aria-atomic="true" tabindex="0"></pre>
-
-  <footer>
-    Synt+ — Web-based multi-language code editor & runner
-  </footer>
-
-</div>
-
-<!-- Settings Modal -->
-<div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
-  <button id="close-settings" aria-label="Close settings modal">&times;</button>
-  <h2 id="settings-title">Settings</h2>
-  <label for="font-size-select">Font Size</label>
-  <select id="font-size-select">
-    <option value="12">12 px</option>
-    <option value="14" selected>14 px</option>
-    <option value="16">16 px</option>
-    <option value="18">18 px</option>
-    <option value="20">20 px</option>
-  </select>
-  <label for="theme-select">Theme</label>
-  <select id="theme-select">
-    <option value="vs-dark" selected>Dark</option>
-    <option value="vs">Light</option>
-  </select>
-</div>
-
+<!-- Monaco Editor loader -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs/loader.js"></script>
-<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-
 <script>
-  let editor, pyodide, language = 'python';
-  const welcomeScreen = document.getElementById('welcome-screen');
-  const app = document.getElementById('app');
-  const loadingMsg = document.getElementById('loading-msg');
-  const languageSelect = document.getElementById('language-select');
-  const newFileBtn = document.getElementById('new-file');
-  const openFileBtn = document.getElementById('open-file');
-  const saveFileBtn = document.getElementById('save-file');
-  const runCodeBtn = document.getElementById('run-code');
-  const fileInput = document.getElementById('file-input');
+  let editor;
+  const runCodeBtn = null; // no run button, run on demand
   const consoleEl = document.getElementById('console');
-  const openSettingsBtn = document.getElementById('open-settings');
-  const settingsModal = document.getElementById('settings-modal');
-  const closeSettingsBtn = document.getElementById('close-settings');
-  const fontSizeSelect = document.getElementById('font-size-select');
-  const themeSelect = document.getElementById('theme-select');
+  const languageSelect = document.getElementById('language-select');
+  const newFileBtn = document.getElementById('new-file-btn');
+  const openFileBtn = document.getElementById('open-file-btn');
+  const saveFileBtn = document.getElementById('save-file-btn');
+  const fileInput = document.getElementById('file-input');
 
-  // Configure Monaco loader path
   require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs' } });
-
-  // Load Monaco editor
-  require(['vs/editor/editor.main'], () => {
+  require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(document.getElementById('editor'), {
-      value: '# Write your code here\n',
-      language: language,
+      value: '// Write your JavaScript code here\n',
+      language: 'javascript',
       theme: 'vs-dark',
       fontFamily: "'Roboto Mono', monospace",
       fontSize: 14,
@@ -309,27 +130,27 @@
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
     });
-    runCodeBtn.disabled = false; // Enable run when editor ready
 
-    // Language selector logic
-    languageSelect.addEventListener('change', e => {
-      language = e.target.value;
-      monaco.editor.setModelLanguage(editor.getModel(), languageMap(language));
-      runCodeBtn.disabled = (language === 'cpp' || language === 'csharp');
+    // Language selector only enables JS for now
+    languageSelect.addEventListener('change', (e) => {
+      if (e.target.value !== 'javascript') {
+        alert('Only JavaScript execution is supported in this version.');
+        languageSelect.value = 'javascript';
+        return;
+      }
+      monaco.editor.setModelLanguage(editor.getModel(), 'javascript');
       clearConsole();
-      editor.setValue('# Write your code here\n');
+      editor.setValue('// Write your JavaScript code here\n');
     });
 
-    // New File
     newFileBtn.addEventListener('click', () => {
       editor.setValue('');
       clearConsole();
     });
 
-    // Open File
     openFileBtn.addEventListener('click', () => fileInput.click());
 
-    fileInput.addEventListener('change', e => {
+    fileInput.addEventListener('change', (e) => {
       if (!e.target.files.length) return;
       const file = e.target.files[0];
       const reader = new FileReader();
@@ -341,7 +162,6 @@
       fileInput.value = '';
     });
 
-    // Save File
     saveFileBtn.addEventListener('click', () => {
       const code = editor.getValue();
       const blob = new Blob([code], { type: 'text/plain' });
@@ -352,43 +172,15 @@
       URL.revokeObjectURL(a.href);
     });
 
-    // Run code
-    runCodeBtn.addEventListener('click', runCode);
-
-    // Settings modal open/close
-    openSettingsBtn.addEventListener('click', () => {
-      settingsModal.classList.add('show');
-      settingsModal.setAttribute('aria-hidden', 'false');
-      fontSizeSelect.value = editor.getOption(monaco.editor.EditorOption.fontSize);
-      themeSelect.value = editor.getTheme();
+    // Run code on Ctrl+Enter
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      runCode();
     });
 
-    closeSettingsBtn.addEventListener('click', () => {
-      settingsModal.classList.remove('show');
-      settingsModal.setAttribute('aria-hidden', 'true');
-    });
+    // Initial console message
+    consoleLog('Press Ctrl+Enter to run JavaScript code.\n');
 
-    fontSizeSelect.addEventListener('change', e => {
-      editor.updateOptions({ fontSize: Number(e.target.value) });
-    });
-
-    themeSelect.addEventListener('change', e => {
-      monaco.editor.setTheme(e.target.value);
-    });
-
-    // Start loading pyodide after editor ready
-    loadPyodideWithRetry();
   });
-
-  function languageMap(lang) {
-    switch (lang) {
-      case 'python': return 'python';
-      case 'javascript': return 'javascript';
-      case 'cpp': return 'cpp';
-      case 'csharp': return 'csharp';
-      default: return 'plaintext';
-    }
-  }
 
   function clearConsole() {
     consoleEl.textContent = '';
@@ -402,54 +194,17 @@
     consoleEl.scrollTop = consoleEl.scrollHeight;
   }
 
-  async function runCode() {
+  function runCode() {
     clearConsole();
     const code = editor.getValue();
-
-    if (language === 'python') {
-      try {
-        consoleLog('Running Python code...');
-        let output = await pyodide.runPythonAsync(code);
-        if (output !== undefined && output !== null) {
-          consoleLog(String(output));
-        }
-      } catch (err) {
-        consoleLog(err.message || err.toString(), true);
-      }
-    } else if (language === 'javascript') {
-      try {
-        consoleLog('Running JavaScript code...');
-        let result = eval(code);
-        if (result !== undefined) {
-          consoleLog(String(result));
-        }
-      } catch (err) {
-        consoleLog(err.message || err.toString(), true);
-      }
-    } else {
-      consoleLog(`Run not supported for ${language}`, true);
-    }
-  }
-
-  // Load Pyodide with retry once
-  async function loadPyodideWithRetry(retry = true) {
     try {
-      loadingMsg.textContent = 'Loading Python runtime...';
-      pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/' });
-      loadingMsg.textContent = 'Python runtime loaded.';
-      setTimeout(() => {
-        welcomeScreen.classList.add('hide');
-        app.style.display = 'grid';
-        app.focus();
-      }, 700);
-    } catch (err) {
-      if (retry) {
-        loadingMsg.textContent = 'Retrying to load Python runtime...';
-        setTimeout(() => loadPyodideWithRetry(false), 1500);
-      } else {
-        loadingMsg.textContent = 'Failed to load Python runtime. Please refresh or try again later.';
-        console.error('Pyodide load failed:', err);
+      consoleLog('Running JavaScript code...');
+      let result = eval(code);
+      if (result !== undefined) {
+        consoleLog(String(result));
       }
+    } catch (err) {
+      consoleLog(err.message || err.toString(), true);
     }
   }
 </script>
