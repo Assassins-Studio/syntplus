@@ -6,11 +6,8 @@
 <title>Synt+</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto+Mono&display=swap" rel="stylesheet" />
 <style>
-  /* Reset */
-  * {
-    box-sizing: border-box;
-  }
-  body, html {
+  * { box-sizing: border-box; }
+  html, body {
     margin: 0; padding: 0;
     height: 100%;
     background: #121212;
@@ -18,7 +15,6 @@
     font-family: 'Inter', sans-serif;
     overflow: hidden;
   }
-  /* Welcome screen */
   #welcome-screen {
     position: fixed;
     inset: 0;
@@ -42,6 +38,9 @@
     height: 120px;
     margin-bottom: 24px;
     animation: spin 3s linear infinite;
+    stroke: #2979ff;
+    stroke-width: 3;
+    fill: #00bcd4;
   }
   @keyframes spin {
     from { transform: rotate(0deg);}
@@ -55,11 +54,13 @@
   }
   #loading-msg {
     margin-top: 12px;
-    color: #666;
+    color: #aaa;
     font-weight: 500;
     font-size: 1rem;
+    max-width: 320px;
+    text-align: center;
+    user-select: text;
   }
-  /* App container */
   #app {
     display: none;
     height: 100vh;
@@ -204,9 +205,9 @@
 <body>
 
 <!-- Welcome Screen -->
-<div id="welcome-screen" role="alert" aria-live="polite">
-  <svg id="welcome-logo" viewBox="0 0 100 100" stroke="#2979ff" stroke-width="3" fill="#00bcd4" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <circle cx="50" cy="50" r="48" stroke-opacity="0.3"/>
+<div id="welcome-screen" role="alert" aria-live="polite" aria-atomic="true">
+  <svg id="welcome-logo" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <circle cx="50" cy="50" r="48" stroke="#2979ff" stroke-opacity="0.3" stroke-width="6" fill="none" />
     <path d="M30 25 L60 25 L30 75 L60 75" stroke="#2979ff" stroke-width="6" fill="none"/>
     <path d="M65 30 L85 50 L65 70" stroke="#2979ff" stroke-width="6" fill="none" />
   </svg>
@@ -220,8 +221,8 @@
   <header>
     <div id="header-logo" aria-label="Synt Plus logo">
       <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-        <circle cx="50" cy="50" r="48" />
-        <path d="M30 25 L60 25 L30 75 L60 75" stroke-width="8" stroke="#2979ff" fill="none" />
+        <circle cx="50" cy="50" r="48" stroke="#2979ff" stroke-width="6" fill="none" />
+        <path d="M30 25 L60 25 L30 75 L60 75" stroke="#2979ff" stroke-width="8" fill="none" />
         <path d="M65 30 L85 50 L65 70" stroke="#2979ff" stroke-width="8" fill="none" />
       </svg>
       Synt+
@@ -272,15 +273,11 @@
   </select>
 </div>
 
-<!-- Monaco Editor Loader -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs/loader.js"></script>
-<!-- Pyodide -->
 <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
 <script>
   let editor, pyodide, language = 'python';
-
-  // DOM Elements
   const welcomeScreen = document.getElementById('welcome-screen');
   const app = document.getElementById('app');
   const loadingMsg = document.getElementById('loading-msg');
@@ -297,9 +294,11 @@
   const fontSizeSelect = document.getElementById('font-size-select');
   const themeSelect = document.getElementById('theme-select');
 
-  // Init Monaco
-  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs' }});
-  require(['vs/editor/editor.main'], function () {
+  // Configure Monaco loader path
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs' } });
+
+  // Load Monaco editor
+  require(['vs/editor/editor.main'], () => {
     editor = monaco.editor.create(document.getElementById('editor'), {
       value: '# Write your code here\n',
       language: language,
@@ -310,26 +309,28 @@
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
     });
-    runCodeBtn.disabled = false; // Enable run once editor ready
-    // Setup language change listener
+    runCodeBtn.disabled = false; // Enable run when editor ready
+
+    // Language selector logic
     languageSelect.addEventListener('change', e => {
       language = e.target.value;
       monaco.editor.setModelLanguage(editor.getModel(), languageMap(language));
-      runCodeBtn.disabled = (language === 'cpp' || language === 'csharp'); // disable run for unsupported
+      runCodeBtn.disabled = (language === 'cpp' || language === 'csharp');
       clearConsole();
       editor.setValue('# Write your code here\n');
     });
 
-    // Buttons
+    // New File
     newFileBtn.addEventListener('click', () => {
       editor.setValue('');
       clearConsole();
     });
 
+    // Open File
     openFileBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', e => {
-      if (e.target.files.length === 0) return;
+      if (!e.target.files.length) return;
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onload = () => {
@@ -340,6 +341,7 @@
       fileInput.value = '';
     });
 
+    // Save File
     saveFileBtn.addEventListener('click', () => {
       const code = editor.getValue();
       const blob = new Blob([code], { type: 'text/plain' });
@@ -350,9 +352,10 @@
       URL.revokeObjectURL(a.href);
     });
 
+    // Run code
     runCodeBtn.addEventListener('click', runCode);
 
-    // Settings
+    // Settings modal open/close
     openSettingsBtn.addEventListener('click', () => {
       settingsModal.classList.add('show');
       settingsModal.setAttribute('aria-hidden', 'false');
@@ -373,13 +376,12 @@
       monaco.editor.setTheme(e.target.value);
     });
 
-    // Hide welcome screen after Pyodide load
-    loadPyodideAndShowApp();
+    // Start loading pyodide after editor ready
+    loadPyodideWithRetry();
   });
 
-  // Map to Monaco language id
   function languageMap(lang) {
-    switch(lang) {
+    switch (lang) {
       case 'python': return 'python';
       case 'javascript': return 'javascript';
       case 'cpp': return 'cpp';
@@ -388,12 +390,10 @@
     }
   }
 
-  // Clear console
   function clearConsole() {
     consoleEl.textContent = '';
   }
 
-  // Append console output with color
   function consoleLog(msg, isError = false) {
     const span = document.createElement('span');
     span.textContent = msg + '\n';
@@ -402,7 +402,6 @@
     consoleEl.scrollTop = consoleEl.scrollHeight;
   }
 
-  // Run code based on language
   async function runCode() {
     clearConsole();
     const code = editor.getValue();
@@ -411,11 +410,11 @@
       try {
         consoleLog('Running Python code...');
         let output = await pyodide.runPythonAsync(code);
-        if (output !== undefined) {
+        if (output !== undefined && output !== null) {
           consoleLog(String(output));
         }
       } catch (err) {
-        consoleLog(err.message, true);
+        consoleLog(err.message || err.toString(), true);
       }
     } else if (language === 'javascript') {
       try {
@@ -425,31 +424,35 @@
           consoleLog(String(result));
         }
       } catch (err) {
-        consoleLog(err.message, true);
+        consoleLog(err.message || err.toString(), true);
       }
     } else {
       consoleLog(`Run not supported for ${language}`, true);
     }
   }
 
-  // Load Pyodide and then show app
-  async function loadPyodideAndShowApp() {
+  // Load Pyodide with retry once
+  async function loadPyodideWithRetry(retry = true) {
     try {
       loadingMsg.textContent = 'Loading Python runtime...';
-      pyodide = await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/' });
+      pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/' });
       loadingMsg.textContent = 'Python runtime loaded.';
       setTimeout(() => {
-        // Fade out welcome screen
         welcomeScreen.classList.add('hide');
-        // Show app container
         app.style.display = 'grid';
         app.focus();
-      }, 800);
-    } catch (e) {
-      loadingMsg.textContent = 'Failed to load Python runtime.';
-      console.error('Pyodide load failed', e);
+      }, 700);
+    } catch (err) {
+      if (retry) {
+        loadingMsg.textContent = 'Retrying to load Python runtime...';
+        setTimeout(() => loadPyodideWithRetry(false), 1500);
+      } else {
+        loadingMsg.textContent = 'Failed to load Python runtime. Please refresh or try again later.';
+        console.error('Pyodide load failed:', err);
+      }
     }
   }
 </script>
+
 </body>
 </html>
