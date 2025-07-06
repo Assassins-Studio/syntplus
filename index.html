@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Synt+</title>
+  <style>
+    /* Basic dark theme + layout */
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      background: #121212;
+      color: #eee;
+      font-family: 'Roboto Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #1e1e1e;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border-bottom: 1px solid #00bcd4;
+    }
+    header h1 {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1.5rem;
+      flex-grow: 1;
+      color: #00bcd4;
+    }
+    button, select {
+      background: #222;
+      border: none;
+      color: #00bcd4;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+      font-size: 1rem;
+    }
+    button:hover, select:hover {
+      background: #2979ff;
+      color: #fff;
+    }
+    main {
+      display: flex;
+      flex-grow: 1;
+      height: 0; /* for flexbox */
+      overflow: hidden;
+    }
+    #editor {
+      flex: 1;
+      border-right: 1px solid #00bcd4;
+    }
+    #output {
+      flex: 0.4;
+      background: #1e1e1e;
+      padding: 12px;
+      color: #00bcd4;
+      font-family: monospace;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+
+  <!-- Monaco editor loader -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs/loader.js"></script>
+
+  <!-- Pyodide (for python run) -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>Synt+</h1>
+  <button id="newFileBtn">New File</button>
+  <button id="openFileBtn">Open File</button>
+  <button id="saveFileBtn">Save File</button>
+  <select id="langSelect" title="Select language">
+    <option value="python">Python</option>
+    <option value="javascript">JavaScript</option>
+    <option value="csharp">C#</option>
+    <option value="cpp">C++</option>
+  </select>
+  <button id="runBtn">Run</button>
+  <input type="file" id="fileInput" style="display:none" accept=".synt" />
+</header>
+
+<main>
+  <div id="editor"></div>
+  <pre id="output"></pre>
+</main>
+
+<script>
+  let editor, pyodide;
+  let currentLanguage = 'python';
+
+  // Monaco config and editor init
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs' }});
+  require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: '',
+      language: 'python',
+      theme: 'vs-dark',
+      automaticLayout: true,
+      fontFamily: 'Roboto Mono, monospace',
+      fontSize: 14,
+      minimap: { enabled: false }
+    });
+  });
+
+  // Language selector
+  const langSelect = document.getElementById('langSelect');
+  langSelect.addEventListener('change', () => {
+    currentLanguage = langSelect.value;
+    monaco.editor.setModelLanguage(editor.getModel(), currentLanguageMap(currentLanguage));
+    clearOutput();
+  });
+
+  function currentLanguageMap(lang) {
+    // Monaco language ids
+    switch(lang) {
+      case 'python': return 'python';
+      case 'javascript': return 'javascript';
+      case 'csharp': return 'csharp';
+      case 'cpp': return 'cpp';
+      default: return 'plaintext';
+    }
+  }
+
+  // New file
+  document.getElementById('newFileBtn').onclick = () => {
+    editor.setValue('');
+    clearOutput();
+  };
+
+  // File open/save
+  const fileInput = document.getElementById('fileInput');
+
+  document.getElementById('openFileBtn').onclick = () => {
+    fileInput.value = null; // reset
+    fileInput.click();
+  };
+
+  fileInput.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.synt')) {
+      alert('Please select a .synt file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = evt.target.result;
+      // Optionally, parse first line for language metadata (e.g. #lang:python)
+      const lines = content.split('\n');
+      let lang = currentLanguage;
+      if (lines[0].startsWith('#lang:')) {
+        lang = lines[0].substring(6).trim();
+        lines.shift();
+      }
+      currentLanguage = lang;
+      langSelect.value = lang;
+      monaco.editor.setModelLanguage(editor.getModel(), currentLanguageMap(lang));
+      editor.setValue(lines.join('\n'));
+      clearOutput();
+    };
+    reader.readAsText(file);
+  };
+
+  document.getElementById('saveFileBtn').onclick = () => {
+    const code = editor.getValue();
+    const lang = currentLanguage;
+    const content = `#lang:${lang}\n${code}`;
+    const blob = new Blob([content], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'code.synt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // Output console
+  const output = document.getElementById('output');
+  function clearOutput() {
+    output.textContent = '';
+  }
+  function appendOutput(text) {
+    output.textContent += text + '\n';
+  }
+  function setOutput(text) {
+    output.textContent = text;
+  }
+
+  // Run button
+  document.getElementById('runBtn').onclick = async () => {
+    clearOutput();
+    const code = editor.getValue();
+
+    if (currentLanguage === 'python') {
+      if (!pyodide) {
+        setOutput('Loading Python runtime...');
+        pyodide = await loadPyodide();
+      }
+      try {
+        let result = await pyodide.runPythonAsync(code);
+        setOutput(result === undefined ? '[No output]' : result.toString());
+      } catch (e) {
+        setOutput('Error: ' + e.message);
+      }
+    } else if (currentLanguage === 'javascript') {
+      try {
+        let result = eval(code);
+        setOutput(result === undefined ? '[No output]' : result.toString());
+      } catch (e) {
+        setOutput('Error: ' + e.message);
+      }
+    } else {
+      setOutput('Run not supported for ' + currentLanguage + '.');
+    }
+  };
+</script>
+
+</body>
+</html>
