@@ -13,7 +13,39 @@
     color: #eee;
     font-family: 'Roboto Mono', monospace;
     display: flex; flex-direction: column;
+    overflow: hidden;
   }
+  /* Loading Screen */
+  #loading-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #121212;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #00bcd4;
+    font-size: 2rem;
+    z-index: 9999;
+    transition: opacity 0.8s ease;
+  }
+  #loading-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Spinner */
+  .spinner {
+    border: 5px solid #00bcd440;
+    border-top: 5px solid #00bcd4;
+    border-radius: 50%;
+    width: 60px; height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
   header {
     background: #1e1e1e;
     display: flex;
@@ -21,6 +53,7 @@
     align-items: center;
     padding: 10px 20px;
     border-bottom: 2px solid #00bcd4;
+    z-index: 1;
   }
   .logo {
     font-weight: bold;
@@ -82,6 +115,11 @@
 </head>
 <body>
 
+<div id="loading-screen" aria-live="polite" aria-busy="true" role="alert">
+  <div class="spinner"></div>
+  Welcome to synt+
+</div>
+
 <header>
   <div class="logo">synt+</div>
   <nav>
@@ -90,9 +128,9 @@
     <button id="save-file-btn">Save File</button>
     <select id="language-select" title="Select Language">
       <option value="javascript" selected>JavaScript</option>
-      <option value="python" disabled>Python (disabled)</option>
-      <option value="cpp" disabled>C++ (disabled)</option>
-      <option value="csharp" disabled>C# (disabled)</option>
+      <option value="python">Python (syntax only)</option>
+      <option value="cpp">C++ (syntax only)</option>
+      <option value="csharp">C# (syntax only)</option>
     </select>
   </nav>
 </header>
@@ -110,13 +148,43 @@
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs/loader.js"></script>
 <script>
   let editor;
-  const runCodeBtn = null; // no run button, run on demand
   const consoleEl = document.getElementById('console');
   const languageSelect = document.getElementById('language-select');
   const newFileBtn = document.getElementById('new-file-btn');
   const openFileBtn = document.getElementById('open-file-btn');
   const saveFileBtn = document.getElementById('save-file-btn');
   const fileInput = document.getElementById('file-input');
+  const loadingScreen = document.getElementById('loading-screen');
+
+  function clearConsole() {
+    consoleEl.textContent = '';
+  }
+
+  function consoleLog(msg, isError = false) {
+    const span = document.createElement('span');
+    span.textContent = msg + '\n';
+    span.style.color = isError ? '#ff5370' : '#00e676';
+    consoleEl.appendChild(span);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function runCode() {
+    clearConsole();
+    if (languageSelect.value !== 'javascript') {
+      consoleLog(`Execution only supported for JavaScript. Selected: ${languageSelect.value}`, true);
+      return;
+    }
+    const code = editor.getValue();
+    try {
+      consoleLog('Running JavaScript code...');
+      let result = eval(code);
+      if (result !== undefined) {
+        consoleLog(String(result));
+      }
+    } catch (err) {
+      consoleLog(err.message || err.toString(), true);
+    }
+  }
 
   require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs' } });
   require(['vs/editor/editor.main'], function () {
@@ -131,16 +199,17 @@
       scrollBeyondLastLine: false,
     });
 
-    // Language selector only enables JS for now
+    // After editor ready, fade out loading screen smoothly
+    setTimeout(() => {
+      loadingScreen.classList.add('hidden');
+      setTimeout(() => loadingScreen.style.display = 'none', 900);
+    }, 1500); // keep loading visible for 1.5s
+
     languageSelect.addEventListener('change', (e) => {
-      if (e.target.value !== 'javascript') {
-        alert('Only JavaScript execution is supported in this version.');
-        languageSelect.value = 'javascript';
-        return;
-      }
-      monaco.editor.setModelLanguage(editor.getModel(), 'javascript');
+      const lang = e.target.value;
+      monaco.editor.setModelLanguage(editor.getModel(), lang);
       clearConsole();
-      editor.setValue('// Write your JavaScript code here\n');
+      editor.setValue(`// Language: ${lang}\n`);
     });
 
     newFileBtn.addEventListener('click', () => {
@@ -177,36 +246,8 @@
       runCode();
     });
 
-    // Initial console message
     consoleLog('Press Ctrl+Enter to run JavaScript code.\n');
-
   });
-
-  function clearConsole() {
-    consoleEl.textContent = '';
-  }
-
-  function consoleLog(msg, isError = false) {
-    const span = document.createElement('span');
-    span.textContent = msg + '\n';
-    span.style.color = isError ? '#ff5370' : '#00e676';
-    consoleEl.appendChild(span);
-    consoleEl.scrollTop = consoleEl.scrollHeight;
-  }
-
-  function runCode() {
-    clearConsole();
-    const code = editor.getValue();
-    try {
-      consoleLog('Running JavaScript code...');
-      let result = eval(code);
-      if (result !== undefined) {
-        consoleLog(String(result));
-      }
-    } catch (err) {
-      consoleLog(err.message || err.toString(), true);
-    }
-  }
 </script>
 
 </body>
