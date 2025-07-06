@@ -4,250 +4,496 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>synt+</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet" />
+<!-- Monaco Editor CDN -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>
 <style>
-  /* Reset and base */
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
+  :root {
+    --bg-dark: #121212;
+    --bg-panel: #1e1e1e;
+    --accent-cyan: #00bcd4;
+    --accent-blue: #2979ff;
+    --text-light: #ddd;
+    --text-muted: #666;
+    --border-radius: 8px;
+    --transition: all 0.25s ease-in-out;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
   body, html {
-    margin: 0; padding: 0; height: 100vh;
-    background: #121212;
-    color: #eee;
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg-dark);
+    color: var(--text-light);
     font-family: 'Roboto Mono', monospace;
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
-  /* Loading Screen */
+
+  /* Loading / Welcome Screen */
   #loading-screen {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: #121212;
+    inset: 0;
+    background: var(--bg-dark);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: #00bcd4;
-    font-size: 2rem;
     z-index: 9999;
-    transition: opacity 0.8s ease;
+    opacity: 1;
+    transition: opacity 1s ease;
   }
-  #loading-screen.hidden {
+  #loading-screen.fade-out {
     opacity: 0;
     pointer-events: none;
   }
-  /* Spinner */
-  .spinner {
-    border: 5px solid #00bcd440;
-    border-top: 5px solid #00bcd4;
-    border-radius: 50%;
-    width: 60px; height: 60px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 20px;
+
+  #loading-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 24px;
+    animation: spin 4s linear infinite;
   }
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    from {transform: rotate(0deg);}
+    to {transform: rotate(360deg);}
   }
 
+  #loading-text {
+    font-size: 1.4rem;
+    color: var(--accent-cyan);
+    letter-spacing: 1.2px;
+  }
+
+  /* Header */
   header {
-    background: #1e1e1e;
+    background: var(--bg-panel);
+    padding: 0 20px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+  }
+
+  #logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: default;
+    user-select: none;
+  }
+  #logo svg {
+    width: 32px;
+    height: 32px;
+    fill: var(--accent-cyan);
+  }
+  #logo span {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--accent-cyan);
+  }
+
+  /* Controls */
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  button, select {
+    background: var(--bg-dark);
+    border: 1.5px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+  }
+  button:hover, select:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-dark);
+  }
+  button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Settings icon */
+  #settings-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    fill: var(--accent-cyan);
+    transition: var(--transition);
+  }
+  #settings-btn:hover {
+    fill: var(--accent-blue);
+  }
+
+  /* Main area */
+  #main {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    background: var(--bg-panel);
+    overflow: hidden;
+  }
+
+  #editor-container {
+    position: relative;
+  }
+  #editor {
+    height: 100%;
+  }
+
+  #console-container {
+    background: #111;
+    color: var(--text-light);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-left: 1px solid #222;
+  }
+  #console-header {
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--accent-cyan);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 2px solid #00bcd4;
-    z-index: 1;
   }
-  .logo {
-    font-weight: bold;
-    font-size: 1.4rem;
-    color: #00bcd4;
-  }
-  nav button {
-    margin-left: 10px;
-    background: #2979ff;
+  #console-clear-btn {
+    background: transparent;
     border: none;
-    color: white;
-    padding: 6px 14px;
-    border-radius: 6px;
+    color: var(--accent-cyan);
     cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
-  }
-  nav button:hover {
-    background: #00bcd4;
-  }
-  #language-select {
-    margin-left: 20px;
-    background: #222;
-    color: #eee;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  main {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
-  #editor, #console {
-    flex: 1;
-    height: 100%;
-    border: none;
-    outline: none;
-  }
-  #editor {
-    background: #1e1e1e;
-  }
-  #console {
-    background: #121212;
-    color: #00e676;
-    padding: 10px;
+    font-weight: 700;
     font-size: 0.9rem;
-    overflow-y: auto;
-    white-space: pre-wrap;
   }
-  footer {
-    background: #1e1e1e;
-    padding: 8px 20px;
-    text-align: center;
-    color: #666;
-    font-size: 0.85rem;
+  #console-clear-btn:hover {
+    color: var(--accent-blue);
+  }
+  #console-output {
+    white-space: pre-wrap;
+    flex-grow: 1;
+  }
+
+  /* File input (hidden) */
+  #file-input {
+    display: none;
+  }
+
+  /* Settings modal */
+  #settings-modal {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: var(--bg-panel);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    width: 320px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.7);
+    color: var(--text-light);
+    z-index: 99999;
+    transition: transform 0.3s ease;
+    user-select: none;
+  }
+  #settings-modal.active {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  #settings-modal h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: var(--accent-cyan);
+  }
+  #settings-modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+  #settings-modal input[type="checkbox"] {
+    margin-right: 6px;
+  }
+  #settings-close-btn {
+    margin-top: 20px;
+    background: var(--accent-cyan);
+    border: none;
+    color: var(--bg-dark);
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    width: 100%;
+  }
+  #settings-close-btn:hover {
+    background: var(--accent-blue);
+  }
+
+  /* Scrollbar styling */
+  #console-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  #console-container::-webkit-scrollbar-thumb {
+    background-color: var(--accent-cyan);
+    border-radius: 4px;
+  }
+
+  /* Responsive */
+  @media (max-width: 800px) {
+    #main {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 200px;
+    }
+    #console-container {
+      border-left: none;
+      border-top: 1px solid #222;
+    }
   }
 </style>
 </head>
 <body>
 
-<div id="loading-screen" aria-live="polite" aria-busy="true" role="alert">
-  <div class="spinner"></div>
-  Welcome to synt+
+<div id="loading-screen">
+  <svg id="loading-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="synt+ logo" role="img" >
+    <circle cx="50" cy="50" r="40" stroke="var(--accent-cyan)" stroke-width="6" fill="none" />
+    <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="var(--accent-cyan)" font-family="Roboto Mono, monospace" font-weight="700" font-size="40">S+</text>
+  </svg>
+  <div id="loading-text">Welcome to synt+</div>
 </div>
 
 <header>
-  <div class="logo">synt+</div>
-  <nav>
-    <button id="new-file-btn">New File</button>
-    <button id="open-file-btn">Open File</button>
-    <button id="save-file-btn">Save File</button>
-    <select id="language-select" title="Select Language">
-      <option value="javascript" selected>JavaScript</option>
-      <option value="python">Python (syntax only)</option>
-      <option value="cpp">C++ (syntax only)</option>
-      <option value="csharp">C# (syntax only)</option>
+  <div id="logo" title="synt+">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+      <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="none"/>
+      <text x="32" y="38" font-family="Roboto Mono, monospace" font-size="30" fill="currentColor" font-weight="700" text-anchor="middle">S+</text>
+    </svg>
+    <span>synt+</span>
+  </div>
+  <div id="controls">
+    <select id="language-select" title="Select Language" aria-label="Select Language">
+      <option value="javascript">JavaScript</option>
+      <option value="python">Python</option>
+      <option value="cpp">C++</option>
+      <option value="csharp">C#</option>
     </select>
-  </nav>
+    <button id="new-btn" title="New File">New</button>
+    <button id="open-btn" title="Open File">Open</button>
+    <button id="save-btn" title="Save File">Save</button>
+    <button id="run-btn" title="Run Code">Run</button>
+    <button id="settings-btn" title="Settings" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9.94 4a7.96 7.96 0 0 1-1.67 4.35l1.77 1.77-1.41 1.41-1.77-1.77A7.96 7.96 0 0 1 12 21.94a7.96 7.96 0 0 1-4.35-1.67l-1.77 1.77-1.41-1.41 1.77-1.77A7.96 7.96 0 0 1 2.06 12a7.96 7.96 0 0 1 1.67-4.35L1.96 5.88l1.41-1.41 1.77 1.77A7.96 7.96 0 0 1 12 2.06a7.96 7.96 0 0 1 4.35 1.67l1.77-1.77 1.41 1.41-1.77 1.77A7.96 7.96 0 0 1 21.94 12Z"/>
+      </svg>
+    </button>
+  </div>
 </header>
 
-<main>
-  <div id="editor" tabindex="0"></div>
-  <div id="console" aria-live="polite" aria-atomic="true"></div>
+<main id="main" role="main">
+  <section id="editor-container">
+    <div id="editor" role="textbox" aria-label="Code editor"></div>
+  </section>
+  <section id="console-container" aria-live="polite" aria-atomic="true">
+    <div id="console-header">
+      <span>Output Console</span>
+      <button id="console-clear-btn" title="Clear Console">Clear</button>
+    </div>
+    <pre id="console-output"></pre>
+  </section>
 </main>
 
-<footer>synt+ — simple web-based code editor | Running JavaScript only</footer>
+<input type="file" id="file-input" accept=".synt" />
 
-<input type="file" id="file-input" accept=".synt" style="display:none" />
+<!-- Settings modal -->
+<div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
+  <h2 id="settings-title">Settings</h2>
+  <label><input type="checkbox" id="setting-autosave" /> Enable Autosave (not implemented)</label>
+  <label><input type="checkbox" id="setting-darkmode" checked disabled /> Dark Mode (default)</label>
+  <button id="settings-close-btn">Close</button>
+</div>
 
-<!-- Monaco Editor loader -->
-<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs/loader.js"></script>
 <script>
-  let editor;
-  const consoleEl = document.getElementById('console');
-  const languageSelect = document.getElementById('language-select');
-  const newFileBtn = document.getElementById('new-file-btn');
-  const openFileBtn = document.getElementById('open-file-btn');
-  const saveFileBtn = document.getElementById('save-file-btn');
-  const fileInput = document.getElementById('file-input');
-  const loadingScreen = document.getElementById('loading-screen');
+  // State
+  let editor, monacoInstance;
+  let running = false;
 
-  function clearConsole() {
-    consoleEl.textContent = '';
-  }
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
+  require(['vs/editor/editor.main'], function() {
+    monacoInstance = monaco;
 
-  function consoleLog(msg, isError = false) {
-    const span = document.createElement('span');
-    span.textContent = msg + '\n';
-    span.style.color = isError ? '#ff5370' : '#00e676';
-    consoleEl.appendChild(span);
-    consoleEl.scrollTop = consoleEl.scrollHeight;
-  }
-
-  function runCode() {
-    clearConsole();
-    if (languageSelect.value !== 'javascript') {
-      consoleLog(`Execution only supported for JavaScript. Selected: ${languageSelect.value}`, true);
-      return;
-    }
-    const code = editor.getValue();
-    try {
-      consoleLog('Running JavaScript code...');
-      let result = eval(code);
-      if (result !== undefined) {
-        consoleLog(String(result));
-      }
-    } catch (err) {
-      consoleLog(err.message || err.toString(), true);
-    }
-  }
-
-  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.38.0/min/vs' } });
-  require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(document.getElementById('editor'), {
-      value: '// Write your JavaScript code here\n',
+      value: "// Welcome to synt+\n// Select a language and start coding!\n",
       language: 'javascript',
       theme: 'vs-dark',
+      automaticLayout: true,
       fontFamily: "'Roboto Mono', monospace",
       fontSize: 14,
-      automaticLayout: true,
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
+      minimap: { enabled: false }
     });
 
-    // After editor ready, fade out loading screen smoothly
+    // Hide loading screen after editor ready and simulate Python loading delay
     setTimeout(() => {
-      loadingScreen.classList.add('hidden');
-      setTimeout(() => loadingScreen.style.display = 'none', 900);
-    }, 1500); // keep loading visible for 1.5s
-
-    languageSelect.addEventListener('change', (e) => {
-      const lang = e.target.value;
-      monaco.editor.setModelLanguage(editor.getModel(), lang);
-      clearConsole();
-      editor.setValue(`// Language: ${lang}\n`);
-    });
-
-    newFileBtn.addEventListener('click', () => {
-      editor.setValue('');
-      clearConsole();
-    });
-
-    openFileBtn.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-      if (!e.target.files.length) return;
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        editor.setValue(reader.result);
-        clearConsole();
-      };
-      reader.readAsText(file);
-      fileInput.value = '';
-    });
-
-    saveFileBtn.addEventListener('click', () => {
-      const code = editor.getValue();
-      const blob = new Blob([code], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'code.synt';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
-
-    // Run code on Ctrl+Enter
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      runCode();
-    });
-
-    consoleLog('Press Ctrl+Enter to run JavaScript code.\n');
+      const loadingScreen = document.getElementById('loading-screen');
+      loadingScreen.classList.add('fade-out');
+      setTimeout(() => loadingScreen.style.display = 'none', 1000);
+    }, 1500);
   });
+
+  // Language map for Monaco
+  const languageMap = {
+    javascript: 'javascript',
+    python: 'python',
+    cpp: 'cpp',
+    csharp: 'csharp'
+  };
+
+  const languageSelect = document.getElementById('language-select');
+  languageSelect.addEventListener('change', () => {
+    const lang = languageSelect.value;
+    monacoInstance.editor.setModelLanguage(editor.getModel(), languageMap[lang]);
+    clearConsole();
+  });
+
+  // Buttons
+  document.getElementById('new-btn').addEventListener('click', () => {
+    if (confirm("Clear the editor? Unsaved changes will be lost.")) {
+      editor.setValue("");
+      clearConsole();
+    }
+  });
+
+  const fileInput = document.getElementById('file-input');
+  document.getElementById('open-btn').addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.synt')) {
+      alert("Please select a .synt file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      editor.setValue(reader.result);
+      clearConsole();
+      // Optionally: prompt language or detect from metadata (skipped for simplicity)
+    };
+    reader.readAsText(file);
+    fileInput.value = '';
+  });
+
+  document.getElementById('save-btn').addEventListener('click', () => {
+    const code = editor.getValue();
+    const blob = new Blob([code], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `code.synt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById('run-btn').addEventListener('click', () => {
+    if (running) return;
+    running = true;
+    clearConsole();
+    const lang = languageSelect.value;
+    const code = editor.getValue();
+
+    if (lang === 'javascript') {
+      runJavaScript(code).then(result => {
+        appendConsole(result.output);
+        if (result.error) appendConsole('Error: ' + result.error);
+        running = false;
+      });
+    } else if (lang === 'python') {
+      appendConsole('Python runtime not available.\nTry JavaScript or C++ for now.');
+      running = false;
+    } else if (lang === 'cpp') {
+      appendConsole('C++ runtime not available.\nTry JavaScript for now.');
+      running = false;
+    } else if (lang === 'csharp') {
+      appendConsole('C# runtime not available.\nTry JavaScript for now.');
+      running = false;
+    } else {
+      appendConsole('Language not supported.');
+      running = false;
+    }
+  });
+
+  document.getElementById('console-clear-btn').addEventListener('click', clearConsole);
+
+  // Settings modal
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsCloseBtn = document.getElementById('settings-close-btn');
+
+  settingsBtn.addEventListener('click', () => {
+    settingsModal.setAttribute('aria-hidden', 'false');
+    settingsModal.classList.add('active');
+  });
+  settingsCloseBtn.addEventListener('click', () => {
+    settingsModal.setAttribute('aria-hidden', 'true');
+    settingsModal.classList.remove('active');
+  });
+
+  // Console helpers
+  const consoleOutput = document.getElementById('console-output');
+  function appendConsole(text) {
+    consoleOutput.textContent += text + '\n';
+    consoleOutput.parentElement.scrollTop = consoleOutput.parentElement.scrollHeight;
+  }
+  function clearConsole() {
+    consoleOutput.textContent = '';
+  }
+
+  // Safe JS runner with timeout
+  function runJavaScript(code) {
+    return new Promise((resolve) => {
+      try {
+        let output = '';
+        const originalLog = console.log;
+        console.log = (...args) => {
+          output += args.join(' ') + '\n';
+          originalLog.apply(console, args);
+        };
+
+        let finished = false;
+
+        // Timeout to prevent infinite loops or hanging code
+        const timeout = setTimeout(() => {
+          if (!finished) {
+            finished = true;
+            console.log = originalLog;
+            resolve({ output, error: 'Script timed out.' });
+          }
+        }, 2000);
+
+        // Run code
+        eval(code);
+
+        if (!finished) {
+          finished = true;
+          clearTimeout(timeout);
+          console.log = originalLog;
+          resolve({ output, error: null });
+        }
+      } catch (err) {
+        resolve({ output: '', error: err.message });
+      }
+    });
+  }
 </script>
 
 </body>
